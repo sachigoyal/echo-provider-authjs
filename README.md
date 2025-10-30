@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Echo OAuth with Auth.js
 
-## Getting Started
+Demo application showing Echo authentication integrated with Next.js and Auth.js.
 
-First, run the development server:
+## Overview
 
+This app implements Echo's OAuth flow using a custom Auth.js provider. After authentication, it demonstrates accessing Echo API endpoints using the OAuth access token.
+
+## Architecture
+
+### Authentication Flow
+
+1. **OAuth Provider** (`src/lib/echo-provider.ts`)
+   - Custom Auth.js provider implementing Echo's OAuth 2.0 flow
+   - Handles authorization, token exchange, and user profile retrieval
+   - Validates Echo App ID format (UUID v4)
+
+2. **Token Management** (`src/auth/index.ts`)
+   - Stores OAuth tokens in session via JWT callback
+   - Makes `access_token` and `refresh_token` available to the application
+
+3. **API Client** (`src/lib/echo-client.ts`)
+   - Initializes `EchoClient` with the stored access token
+   - Caches client instance for reuse across requests
+
+4. **Data Fetching** (`src/lib/echo.ts`)
+   - Uses authenticated client to call Echo API endpoints
+   - Fetches user info, balance, and free tier data
+
+### API Routes
+
+- `/api/auth/[...nextauth]` - Auth.js handlers for OAuth flow
+- `/api/echo/[...echo]` - Echo SDK handlers (Next.js integration)
+
+## Setup
+
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Set environment variable:
+```bash
+ECHO_APP_ID=your-echo-app-id
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run development server:
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How It Works
 
-## Learn More
+The custom provider configures Auth.js to:
+- Direct users to Echo's authorization endpoint with `llm:invoke offline_access` scopes
+- Exchange authorization code for access/refresh tokens
+- Fetch user profile from Echo's userinfo endpoint
 
-To learn more about Next.js, take a look at the following resources:
+The access token is persisted in the session and used to authenticate requests to Echo's API via the TypeScript SDK.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Dependencies
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `next-auth@5.0.0-beta.30` - Authentication
+- `@auth/core@0.41.1` - Authentication core (for the custom provider)
+- `@merit-systems/echo-typescript-sdk` - Echo API client
+- `@merit-systems/echo-next-sdk` - Echo Next.js integration
